@@ -8,32 +8,32 @@ IF MULTIPLE TEAM MEMBERS SUBMIT, ensure that all but one resubmit with nothing b
 
 ===================== HEADER ========================
 
-Student #1, Name: TODO
-Student #1, ugrad.cs.ubc.ca Login: TODO
-Student #1, Student Number: TODO
+Student #1, Name: Edward Cai
+Student #1, ugrad.cs.ubc.ca Login: c4n0b
+Student #1, Student Number: 41480154
 
-Student #2, Name: TODO (or write "NONE")
-Student #2, ugrad.cs.ubc.ca Login: TODO (or write "NONE")
-Student #2, Student Number: TODO (or write "NONE")
+Student #2, Name: Kwang Hee Park
+Student #2, ugrad.cs.ubc.ca Login: m8b9
+Student #2, Student Number: 56308133
 
-Student #3, Name: TODO (or write "NONE")
-Student #3, ugrad.cs.ubc.ca Login: TODO (or write "NONE")
-Student #3, Student Number: TODO (or write "NONE")
+Student #3, Name: Shobhit Bhatia
+Student #3, ugrad.cs.ubc.ca Login: j9k0b
+Student #3, Student Number: 23853154
 
-Student #4, Name: TODO (or write "NONE")
-Student #4, ugrad.cs.ubc.ca Login: TODO (or write "NONE")
-Student #4, Student Number: TODO (or write "NONE")
+Student #4, Name: Ro Lee
+Student #4, ugrad.cs.ubc.ca Login: n3l0b
+Student #4, Student Number: 49806102
 
-Student #5, Name: TODO (or write "NONE")
-Student #5, ugrad.cs.ubc.ca Login: TODO (or write "NONE")
-Student #5, Student Number: TODO (or write "NONE")
+Student #5, Name: Benjamin Willox
+Student #5, ugrad.cs.ubc.ca Login: s2g1b
+Student #5, Student Number: 28447150
 
-Team name (for fun!): TODO
+Team name (for fun!): AliveMau5
 
 Acknowledgment that you understand and have followed the course's collaboration policy (READ IT at
 http://www.ugrad.cs.ubc.ca/~cs311/current/_syllabus.php#Collaboration_Policy):
 
-Signed: TODO (put your names here again as a signature)
+Signed: Edward Cai, Kwang Hee Park, Shobhit Bhatia, Ro Lee, Benjamin Willox
 
 ===================== LOGISTICS =====================
 
