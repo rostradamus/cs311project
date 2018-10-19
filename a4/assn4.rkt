@@ -237,6 +237,10 @@
        (id sexp)]
       [(list 'observe dist pred)
        (observe (parse dist) (parse pred))]
+      [(list 'begin expr)
+       (parse expr)]
+      [(list 'begin expr next ...)
+       (rec-begin (parse expr) (parse (cons 'begin next)))]
       [(cons (and word (? reserved?)) _)
        (error 'parse "Misused reserved word ~a in: ~a" word sexp)]
       [(list 'fun (? valid-id? param) body) (fun param (parse body))]
