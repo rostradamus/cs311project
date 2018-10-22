@@ -417,11 +417,14 @@
                                              (if (not (empty? query-result))
                                                  (vals (distV query-result) state)
                                                  (error "Filtered list should not be empty.")))]
-                                   [rejected () (rejected)]
+                                   [rejected () (vals (rejected) 0)]
                                    [else (error "Expected query to be of type thunkV.")])]
-                           [rejected () (rejected)]
+                           [rejected () (vals (rejected) 0)]
                            [else (error "Expected a number as the first parameter.")]))]
-                [rec-begin (expr next) (error "TODO")]
+                [rec-begin (expr next)
+                           (local [(define e-result (interp-helper expr env state))
+                                   (define S1 (vals-state e-result))]
+                             (interp-helper next env S1))]
                 [observe (dist pred)
                          (local [(define d-result (interp-helper dist env state))
                                  (define d-val (vals-val d-result))
@@ -439,7 +442,7 @@
                                       (if (empty? new-list)
                                           (vals (rejected) 0)
                                           (vals (distV new-list) (* d-state (/ (length new-list) total-len)))))]
-                             [rejected () (rejected)]
+                             [rejected () (vals (rejected) 0)]
                              [else (error 'interp "something happened in observe")]))])))]
     ;; start with an empty env and weight of 1
     (interp-helper expr (mtEnv) 1)))
