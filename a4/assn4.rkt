@@ -209,8 +209,8 @@
 ;; Consumes an s-expression and generates the corresponding ISE
 (define (parse sexp)
   (local [(define valid-id? (lambda (id)
-                        (and (symbol? id)
-                             (not (or (op-exists? id) (reserved? id))))))]
+                              (and (symbol? id)
+                                   (not (or (op-exists? id) (reserved? id))))))]
     (match sexp
       [(? number?)
        (num sexp)]
@@ -305,11 +305,11 @@
                 [anEnv (name value anotherEnv) (if (symbol=? id name)
                                                    value
                                                    (lookup id anotherEnv))])))
-           (define sample-from-dist (get-default-sampler))
+          (define sample-from-dist (get-default-sampler))
 
-           ;; ISE Env number -> ValueXState
-           ;; helper for interp
-           (define interp-helper
+          ;; ISE Env number -> ValueXState
+          ;; helper for interp
+          (define interp-helper
             (lambda (expr env state)
               (type-case ISE expr
                 [id (name) (vals (lookup name env) state)]
@@ -370,12 +370,12 @@
                                                     (define expr-val (vals-val firstResult))
                                                     (define expr-state (vals-state firstResult))
                                                     (define-values (rest-vals rest-state) (interp-list (rest exprs) env expr-state))]
-                                              (values (cons expr-val rest-vals) state))))
+                                              (values (cons expr-val rest-vals) rest-state))))
 
                                       (define-values (elemsV S1) (interp-list elems env state))]
                                 (if (or (empty? elemsV) (member (rejected) elemsV))
-                                     (vals (rejected) 0)
-                                     (vals (distV elemsV) state)))]
+                                    (vals (rejected) 0)
+                                    (vals (distV elemsV) S1)))]
                 [sample (e)
                         (local [(define result (interp-helper e env state))
                                 (define v (vals-val result))
@@ -385,12 +385,62 @@
                             [distV (listVals)
                                    (if (empty? listVals)
                                        (error "Cannot sample empty distribution")
-                                       (vals (sample-from-dist listVals) state))]
+                                       (vals (sample-from-dist listVals) S1))]
                             [else (error "Can only sample distributions")]))]
                 [defquery (body) (vals (thunkV body env) state)]
-                [infer (n query) (error "TODO")]
+                [infer (n query)
+                       (local [(define n-result (interp-helper n env state))
+                               (define n-val (vals-val n-result))
+                               (define n-state (vals-state n-result))
+                               (define q-result (interp-helper query env n-state))
+                               (define q-val (vals-val q-result))
+                               (define q-state (vals-state q-result))]
+                         (type-case ISE-Value n-val
+                           [numV (num)
+                                 (type-case ISE-Value q-val
+                                   [thunkV (body thunk-env)
+                                           (local [(define (rec-exec-query count executable-query relay-env acc state)
+                                                     (cond [(zero? count) acc]
+                                                           [else
+                                                            (rec-exec-query (sub1 count)
+                                                                            executable-query
+                                                                            relay-env
+                                                                            (append acc
+                                                                                    (local [(define result (interp-helper executable-query relay-env state))
+                                                                                            (define res-val (vals-val result))
+                                                                                            (define res-state (vals-state result))]
+                                                                                      (if (rejected? res-val)
+                                                                                          '()
+                                                                                          (list res-val))))
+                                                                            state)]))
+                                                   (define query-result (rec-exec-query num body thunk-env '() state))]
+                                             (if (not (empty? query-result))
+                                                 (vals (distV query-result) state)
+                                                 (error "Filtered list should not be empty.")))]
+                                   [rejected () (rejected)]
+                                   [else (error "Expected query to be of type thunkV.")])]
+                           [rejected () (rejected)]
+                           [else (error "Expected a number as the first parameter.")]))]
                 [rec-begin (expr next) (error "TODO")]
-                [observe (dist pred) (error "TODO")])))]
+                [observe (dist pred)
+                         (local [(define d-result (interp-helper dist env state))
+                                 (define d-val (vals-val d-result))
+                                 (define d-state (vals-state d-result))]
+                           (type-case ISE-Value d-val
+                             [distV (values)
+                                    (local [(define total-len (length values))
+                                            (define (run-value-in-pred val)
+                                              (interp-helper (app pred (num (numV-n val))) env state))
+                                            (define (pred-runner val)
+                                              (not (zero? (numV-n (vals-val (run-value-in-pred val))))))
+                                            (define new-list
+                                              (filter pred-runner values))]
+                                      ;  (vals (distV filtered-vals) new-state))
+                                      (if (empty? new-list)
+                                          (vals (rejected) 0)
+                                          (vals (distV new-list) (* d-state (/ (length new-list) total-len)))))]
+                             [rejected () (rejected)]
+                             [else (error 'interp "something happened in observe")]))])))]
     ;; start with an empty env and weight of 1
     (interp-helper expr (mtEnv) 1)))
 
