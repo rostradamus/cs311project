@@ -56,17 +56,17 @@ For teams, rough breakdown of work: TODO (no more than a paragraph needed!)
    above by inference. Include comments to briefly explain how your
    program works.
 
-   (run '{with {fair {uniform 1 7}}
-            {with {bias {distribution 1 2 3 3 4 5 6}}
-               {with {diceDist {uniform 1 4}}
+   (run '{with {fair {uniform 1 7}} ;;Represents the fair dice
+            {with {bias {distribution 1 2 3 3 4 5 6}} ;;Represents the biased die
+               {with {diceDist {uniform 1 4}} ;;Represents the 3 dice in bag, 1 and 2 represents fair dice, 3 represents bias die
                   {begin
                      {with {result {infer 1000 {defquery
-                                                   {ifelse {> 2 {sample diceDist}}
-                                                      {with {die {sample {distribution bias}}}
+                                                   {ifelse {> 2 {sample diceDist}} ;;Draw a die from bag, if the die is greater than 2
+                                                      {with {die {sample {distribution bias}}} ;;Roll the bias die
                                                          {sample die}}
-                                                      {with {die {sample {distribution fair}}}
+                                                      {with {die {sample {distribution fair}}} ;;else roll the fair die
                                                          {sample fair}}}}}}
-                           {observe result {fun x {= x 3}}}}}}}})
+                           {observe result {fun x {= x 3}}}}}}}}) ;;Probability the rolled die is 3
 
 2. In this assignment we keep the weight of the program as a state,
    which we pass around as a parameter and return value, instead of
