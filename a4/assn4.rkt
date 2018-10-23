@@ -431,17 +431,19 @@
                                  (define d-state (vals-state d-result))]
                            (type-case ISE-Value d-val
                              [distV (values)
-                                    (local [(define total-len (length values))
-                                            (define (run-value-in-pred val)
-                                              (interp-helper (app pred (num (numV-n val))) env state))
+                                    (local [(define isV-true?
+                                              (compose not zero? numV-n))
                                             (define (pred-runner val)
-                                              (not (zero? (numV-n (vals-val (run-value-in-pred val))))))
+                                              (local [(define pred-result
+                                                        (interp-helper (app pred (num (numV-n val))) env state))]
+                                                (vals-val pred-result)))
                                             (define new-list
-                                              (filter pred-runner values))]
-                                      ;  (vals (distV filtered-vals) new-state))
+                                              (filter (compose isV-true? pred-runner) values))
+                                            (define new-state
+                                              (* d-state (/ (length new-list) (length values))))]
                                       (if (empty? new-list)
                                           (vals (rejected) 0)
-                                          (vals (distV new-list) (* d-state (/ (length new-list) total-len)))))]
+                                          (vals (distV new-list) new-state)))]
                              [rejected () (vals (rejected) 0)]
                              [else (error 'interp "something happened in observe")]))])))]
     ;; start with an empty env and weight of 1
