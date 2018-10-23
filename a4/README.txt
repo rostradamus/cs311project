@@ -56,7 +56,17 @@ For teams, rough breakdown of work: TODO (no more than a paragraph needed!)
    above by inference. Include comments to briefly explain how your
    program works.
 
-   TODO
+   (run '{with {fair {uniform 1 7}}
+            {with {bias {distribution 1 2 3 3 4 5 6}}
+               {with {diceDist {uniform 1 4}}
+                  {begin
+                     {with {result {infer 1000 {defquery
+                                                   {ifelse {> 2 {sample diceDist}}
+                                                      {with {die {sample {distribution bias}}}
+                                                         {sample die}}
+                                                      {with {die {sample {distribution fair}}}
+                                                         {sample fair}}}}}}
+                           {observe result {fun x {= x 3}}}}}}}})
 
 2. In this assignment we keep the weight of the program as a state,
    which we pass around as a parameter and return value, instead of
