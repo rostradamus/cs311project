@@ -264,9 +264,7 @@
   (cond
     [(boolean? res) (if res (numV 1) (numV 0))]
     [(number? res) (numV res)]
-    [else (error "Binary operations should produce numbers or booleans")]
-    )
-  )
+    [else (error "Binary operations should produce numbers or booleans")]))
 
 ;; (listof (Pair X number)) -> (listof X)
 ;; Normalizes a list of pairs of (X weight) to a list
@@ -320,11 +318,11 @@
                                (define S1 (vals-state result))]
                          (type-case ISE-Value lhsV
                            [numV (n1)
-                                 (local [(define result (interp-helper rhs env state))
+                                 (local [(define result (interp-helper rhs env S1))
                                          (define rhsV (vals-val result))
                                          (define S2 (vals-state result))]
                                    (type-case ISE-Value rhsV
-                                     [numV (n2) (vals (wrapResult (op n1 n2)) state)]
+                                     [numV (n2) (vals (wrapResult (op n1 n2)) S2)]
                                      [rejected () (vals (rejected) 0)]
                                      [else (error "non-numerical value in binop rhs")]))]
                            [rejected () (vals (rejected) 0)]
