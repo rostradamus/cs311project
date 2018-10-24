@@ -404,7 +404,7 @@
                                                                             executable-query
                                                                             relay-env
                                                                             (append acc
-                                                                                    (local [(define result (interp-helper executable-query relay-env state))
+                                                                                    (local [(define result (interp-helper executable-query relay-env 1))
                                                                                             (define res-val (vals-val result))
                                                                                             (define res-state (vals-state result))]
                                                                                       (if (rejected? res-val)
@@ -422,7 +422,9 @@
                 [rec-begin (expr next)
                            (local [(define e-result (interp-helper expr env state))
                                    (define S1 (vals-state e-result))]
-                             (interp-helper next env S1))]
+                             (if (rejected? e-result)
+                                 (vals (rejected) 0)
+                             (interp-helper next env S1)))]
                 [observe (dist pred)
                          (local [(define d-result (interp-helper dist env state))
                                  (define d-val (vals-val d-result))
