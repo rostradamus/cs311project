@@ -429,7 +429,7 @@
                                  (define d-state (vals-state d-result))]
                            (type-case ISE-Value d-val
                              [distV (values)
-                                    (if (zero? (length values))
+                                    (if (empty? values)
                                         (vals (rejected) 0)
                                         (local [(define isV-true?
                                                   (compose not zero? numV-n))
