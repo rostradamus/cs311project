@@ -333,8 +333,8 @@
                                 (define S1 (vals-state result))]
                           (type-case ISE-Value condV
                             [numV (n) (if (not (= n 0))
-                                          (interp-helper conseq env state)
-                                          (interp-helper altern env state))]
+                                          (interp-helper conseq env S1)
+                                          (interp-helper altern env S1))]
                             [rejected () (vals (rejected) 0)]
                             [else (error "non-boolean value in ifelse test")]))]
                 [fun (param body) (vals (closureV param body env) state)]
@@ -352,7 +352,7 @@
                                      [body   (closureV-body fV)]
                                      [cEnv   (closureV-env fV)]
                                      [newEnv (anEnv param argV cEnv)])
-                                (interp-helper body newEnv state))]))]
+                                (interp-helper body newEnv S1))]))]
                 [with (bnd body)
                       (interp-helper (app (fun (binding-name bnd) body)
                                           (binding-named-expr bnd))
@@ -369,7 +369,6 @@
                                                     (define expr-state (vals-state firstResult))
                                                     (define-values (rest-vals rest-state) (interp-list (rest exprs) env expr-state))]
                                               (values (cons expr-val rest-vals) rest-state))))
-
                                       (define-values (elemsV S1) (interp-list elems env state))]
                                 (if (or (empty? elemsV) (member (rejected) elemsV))
                                     (vals (rejected) 0)
