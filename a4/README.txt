@@ -39,11 +39,16 @@ Signed: Edward Cai, Kwang Hee Park, Shobhit Bhatia, Ro Lee, Benjamin Willox
 
 Please fill in each of the following:
 
-Approximate hours on the project: TODO (when you get there)
+Approximate hours on the project: 8
 
-Acknowledgment of assistance (per the collab policy!): TODO
+Acknowledgment of assistance (per the collab policy!): Referred only to the Racket documentations for help.
 
-For teams, rough breakdown of work: TODO (no more than a paragraph needed!)
+For teams, rough breakdown of work:
+
+As a group, we started out with brief meetings to discuss about the tasks: parse and interp. We broke
+down the work into 5 parts: Theory questions, parse-begin, interp-begin, interp-infer, and interp-observe.
+
+Each member took one part, completed, and came back as a group to finalize before submission.
 
 ====================== THEORY =======================
 
@@ -77,4 +82,25 @@ For teams, rough breakdown of work: TODO (no more than a paragraph needed!)
    expected result is, what this improperly implemented interpreter
    would produce, and why.
 
-   TODO
+   An example that we have would be like the following:
+
+   {with {f {fun x {begin
+                     {observe {distribution 1 2 3}
+                              {fun y {< y 2}}}
+                     {> x 3}}}}
+         {observe {distribution 1 2 3 4 5} f}}
+
+   From this we would expect the result state to be 2/5, since our implementation
+   ignores state changes in functions for observe.
+
+   However, running this improperly implemented program would result
+   in the state being 2/15 (1/3 multiplied by 2/5).
+
+   The reason would be that when state is passed around like the environment, 
+   it stores / caches the value on a 'global' scope and all the observe values
+   would then be accumulated over and create unexpected results as such. 
+   
+
+   
+
+    
