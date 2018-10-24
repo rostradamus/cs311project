@@ -333,8 +333,8 @@
                                 (define S1 (vals-state result))]
                           (type-case ISE-Value condV
                             [numV (n) (if (not (= n 0))
-                                          (interp-helper conseq env state)
-                                          (interp-helper altern env state))]
+                                          (interp-helper conseq env S1)
+                                          (interp-helper altern env S1))]
                             [rejected () (vals (rejected) 0)]
                             [else (error "non-boolean value in ifelse test")]))]
                 [fun (param body) (vals (closureV param body env) state)]
@@ -352,7 +352,7 @@
                                      [body   (closureV-body fV)]
                                      [cEnv   (closureV-env fV)]
                                      [newEnv (anEnv param argV cEnv)])
-                                (interp-helper body newEnv state))]))]
+                                (interp-helper body newEnv S1))]))]
                 [with (bnd body)
                       (interp-helper (app (fun (binding-name bnd) body)
                                           (binding-named-expr bnd))
@@ -369,7 +369,6 @@
                                                     (define expr-state (vals-state firstResult))
                                                     (define-values (rest-vals rest-state) (interp-list (rest exprs) env expr-state))]
                                               (values (cons expr-val rest-vals) rest-state))))
-
                                       (define-values (elemsV S1) (interp-list elems env state))]
                                 (if (or (empty? elemsV) (member (rejected) elemsV))
                                     (vals (rejected) 0)
@@ -397,7 +396,7 @@
                            [numV (num)
                                  (type-case ISE-Value q-val
                                    [thunkV (body thunk-env)
-                                           (local [(define (rec-exec-query count executable-query relay-env acc state)
+                                           (local [(define (rec-exec-query count executable-query relay-env acc)
                                                      (cond [(zero? count) acc]
                                                            [else
                                                             (rec-exec-query (sub1 count)
@@ -409,43 +408,44 @@
                                                                                             (define res-state (vals-state result))]
                                                                                       (if (rejected? res-val)
                                                                                           '()
-                                                                                          (list res-val))))
-                                                                            state)]))
-                                                   (define query-result (rec-exec-query num body thunk-env '() state))]
+                                                                                          (list res-val)))))]))
+                                                   (define query-result (rec-exec-query num body thunk-env '()))]
                                              (if (not (empty? query-result))
-                                                 (vals (distV query-result) state)
+                                                 (vals (distV query-result) q-state)
                                                  (error "Filtered list should not be empty.")))]
                                    [rejected () (vals (rejected) 0)]
                                    [else (error "Expected query to be of type thunkV.")])]
                            [rejected () (vals (rejected) 0)]
                            [else (error "Expected a number as the first parameter.")]))]
-                [rec-begin (expr next)
+                [rec-begin (expr next)  
                            (local [(define e-result (interp-helper expr env state))
                                    (define S1 (vals-state e-result))]
                              (if (rejected? e-result)
                                  (vals (rejected) 0)
-                             (interp-helper next env S1)))]
+                                 (interp-helper next env S1)))]
                 [observe (dist pred)
                          (local [(define d-result (interp-helper dist env state))
                                  (define d-val (vals-val d-result))
                                  (define d-state (vals-state d-result))]
                            (type-case ISE-Value d-val
                              [distV (values)
-                                    (local [(define isV-true?
-                                              (compose not zero? numV-n))
-                                            (define (pred-runner val)
-                                              (local [(define pred-result
-                                                        (interp-helper (app pred (num (numV-n val))) env state))]
-                                                (vals-val pred-result)))
-                                            (define new-list
-                                              (filter (compose isV-true? pred-runner) values))
-                                            (define new-state
-                                              (* d-state (/ (length new-list) (length values))))]
-                                      (if (empty? new-list)
-                                          (vals (rejected) 0)
-                                          (vals (distV new-list) new-state)))]
+                                    (if (empty? values)
+                                        (vals (rejected) 0)
+                                        (local [(define isV-true?
+                                                  (compose not zero? numV-n))
+                                                (define (pred-runner val)
+                                                  (local [(define pred-result
+                                                            (interp-helper (app pred (num (numV-n val))) env d-state))]
+                                                    (vals-val pred-result)))
+                                                (define new-list
+                                                  (filter (compose isV-true? pred-runner) values))
+                                                (define new-state    
+                                                  (* d-state (/ (length new-list) (length values))))]
+                                          (if (empty? new-list)
+                                              (vals (rejected) 0)
+                                              (vals (distV new-list) new-state))))]
                              [rejected () (vals (rejected) 0)]
-                             [else (error 'interp "something happened in observe")]))])))]
+                             [else (error 'interp "Expected a distV.")]))])))]
     ;; start with an empty env and weight of 1
     (interp-helper expr (mtEnv) 1)))
 
@@ -466,6 +466,14 @@
                      {defquery 1}
                      {fun x x}})
       (rec-begin (distribution (list (num 1) (num 2) (num 3))) (rec-begin (defquery (num 1)) (fun 'x (id 'x)))))
+
+(test (parse '{begin {distribution 1 2 3}
+                     {distribution 1 2 3}
+                     {distribution 1 2 3}
+                     {distribution 1 2 3}})
+      (rec-begin (distribution (list (num 1) (num 2) (num 3)))
+                 (rec-begin (distribution (list (num 1) (num 2) (num 3)))
+                            (rec-begin (distribution (list (num 1) (num 2) (num 3))) (distribution (list (num 1) (num 2) (num 3)))))))
 
 (test (parse '{with {d {distribution 4 5 6}}
                     {begin 1 d 2}})
@@ -502,7 +510,7 @@
 ;; Infer the probability of rolling a die and getting
 ;;  a number > 2 and < 5
 
-; apporach 1
+; approach 1
 (test-gen
  '{with {d {uniform 1 6}}
         {observe {observe {infer 10 {defquery {sample d}}}
