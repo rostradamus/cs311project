@@ -334,7 +334,7 @@
                           (type-case ISE-Value condV
                             [numV (n) (if (not (= n 0))
                                           (interp-helper conseq env S1)
-                                          (interp-helper altern env S1))]
+                                          (interp-helper altern env state))]
                             [rejected () (vals (rejected) 0)]
                             [else (error "non-boolean value in ifelse test")]))]
                 [fun (param body) (vals (closureV param body env) state)]
