@@ -417,10 +417,10 @@
     
     [s-num (n) (num n)]
 
-    ; TODO #2: fix the minor typo in this desugaring and remind yourself that
+    ; DONE #2: fix the minor typo in this desugaring and remind yourself that
     ; we desugar ID references to wrap them in an {unbox ...} and function
     ; applications to wrap each argument expression in a {box ...}.
-    [s-id (name) (unbox (id name))]
+    [s-id (name) (un-box (id name))]
 
     [s-add (lhs rhs) (add (desugar lhs) (desugar rhs))]
     [s-sub (lhs rhs) (add (desugar lhs) (mult (num -1) (desugar rhs)))]
