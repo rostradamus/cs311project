@@ -426,7 +426,7 @@
     [s-sub (lhs rhs) (add (desugar lhs) (mult (num -1) (desugar rhs)))]
     [s-mult (lhs rhs) (mult (desugar lhs) (desugar rhs))]
 
-    ; TODO #3: implement desugaring in terms of function application.
+    ; DONE #3: implement desugaring in terms of function application.
     ; NOTE: {with {{x 1} {y x}} y} should produce an ERROR not 1,
     ;       although {with* {{x 1} {y x}} x} produces 1.
     ;
@@ -435,8 +435,8 @@
     ; argument expressions in boxes properly (see the desugaring for
     ; s-app if you're not sure what this means!).
     [s-with (names named-exprs body)
-             (desugar (s-app (s-fun 'TODO 'TODO)
-                             'TODO))]
+             (desugar (s-app (s-fun names body)
+                             named-exprs))]
     [s-with* (names named-exprs body)
              (desugar (foldr (lambda (name named-expr acc-desugaring)
                                (s-app (s-fun (list name) acc-desugaring)
