@@ -1516,3 +1516,15 @@
                                                     {obj-get self acc}
                                                     {seqn {obj-set! self acc {* {obj-get self acc} n}}
                                                           {-> self factorial (- n 1)}}}}}})
+
+(test (run-qs `{with {{o ,FACTORIAL_OBJECT}}
+                {-> ,FACTORIAL_OBJECT factorial 0}})
+      (numV 1))
+
+(test (run-qs `{with {{o ,FACTORIAL_OBJECT}}
+                {-> ,FACTORIAL_OBJECT factorial 1}})
+      (numV 1))
+
+(test (run-qs `{with {{o ,FACTORIAL_OBJECT}}
+                {-> ,FACTORIAL_OBJECT factorial 10}})
+      (numV 3628800))
