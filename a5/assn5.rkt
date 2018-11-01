@@ -346,8 +346,8 @@
 (test (parse '{with* {{x 1}} x}) (s-with* '(x) (list (s-num 1)) (s-id 'x)))
 (test (parse '{with* {{a 1} {b 2} {c 3}} 4})
       (s-with* '(a b c)
-              (list (s-num 1) (s-num 2) (s-num 3))
-              (s-num 4)))
+               (list (s-num 1) (s-num 2) (s-num 3))
+               (s-num 4)))
 
 ;; if0
 (test (parse '{if0 a b c}) (s-if0 (s-id 'a) (s-id 'b) (s-id 'c)))
@@ -435,8 +435,8 @@
     ; argument expressions in boxes properly (see the desugaring for
     ; s-app if you're not sure what this means!).
     [s-with (names named-exprs body)
-             (desugar (s-app (s-fun names body)
-                             named-exprs))]
+            (desugar (s-app (s-fun names body)
+                            named-exprs))]
     [s-with* (names named-exprs body)
              (desugar (foldr (lambda (name named-expr acc-desugaring)
                                (s-app (s-fun (list name) acc-desugaring)
@@ -709,17 +709,19 @@
                              (eval-args args f-sto))]
                      (type-case Value the-fun
                        [closureV (arg-names body closure-env)
-                                 ; TODO #4: add the error handling that's missing here!
+                                 ; DONE #4: add the error handling that's missing here!
                                  ; (This may be tricky to find until you fix most other errors.
                                  ; If so, just leave it to the end!)
-                                 (helper body
-                                         ; Adds pairs of name/value to the environment
-                                         ; for each parameter name and argument value.
-                                         (foldl anEnv
-                                                closure-env
-                                                arg-names
-                                                arg-vals)                                          
-                                         a-sto)]
+                                 (if (= (length arg-names) (length arg-vals))
+                                     (helper body
+                                             ; Adds pairs of name/value to the environment
+                                             ; for each parameter name and argument value.
+                                             (foldl anEnv
+                                                    closure-env
+                                                    arg-names
+                                                    arg-vals)
+                                             a-sto)
+                                     (error 'interp "number arguments for function appliction should equal to the number of params"))]
                        [else (error 'interp "You can only apply closures! You tried to apply ~a (in: ~a)" the-fun exp)]))]
               [make-box (be)
                         (local [(define-values (be-val be-sto)
@@ -764,13 +766,10 @@
               ; 6) Return the result of appending these string components. (Racket's string-append will be handy!)
               [q-append (str1 str2)
                         (local [(define-values (s1-val s1-sto)
-                                  ;(v*s->values (assert-type-v*s strV? (v*s (strV "TODO") (mtSto)))))]
-                                   (v*s->values (assert-type-v*s strV? (helper str1 env sto))))
+                                  (v*s->values (assert-type-v*s strV? (helper str1 env sto))))
                                 (define-values (s2-val s2-sto)
-                                  (v*s->values (assert-type-v*s strV? (helper str2 env sto))))]
-                          ;;(v*s (strV "TODOAPPEND") (mtSto)))]
-                          (v*s (strV (string-append (strV-s s1-val) (strV-s s2-val))) (mtSto)))]
-              ;(run '(append "Good" "bye"))
+                                  (v*s->values (assert-type-v*s strV? (helper str2 env s1-sto))))]
+                          (v*s (strV (string-append (strV-s s1-val) (strV-s s2-val))) s2-sto))]
               [q-err (msg)
                      (local [(define-values (m-val m-sto)
                                (v*s->values (helper msg env sto)))]
@@ -968,7 +967,7 @@
        (match sexp
 
          ; {new ex-nihilo}
-         ; TODO #6: finish this desugaring to implement creation of an empty object.
+         ; DONE #6: finish this desugaring to implement creation of an empty object.
          ; HINT: look ahead at the {new {prototype <Expr>}} case below!
          [(list 'new 'ex-nihilo)
           ; The basic object is a function that takes a message and looks for it in the current
@@ -976,7 +975,10 @@
           ; in the environment, then it returns its value. Otherwise, it gives an error.
           ;
           ; But, where do names come from? Keep reading..
-          (parse-qs '{TODO})]
+          (parse-qs '{fun {msg}
+                          {ifdef msg
+                                 {str->id msg}
+                                 {error "object does not have property"}}})]
 
          ; {new ex-nihilo {<id> <Expr>} ...}, with at least one name/value pair
          ;
@@ -998,17 +1000,17 @@
           ; the prototype. (If that doesn't have it, then it'll recursively check in ITS
           ; prototype, etc.)
           (parse-qs `{fun {msg}
-                               {ifdef msg           ; does this object have a field named msg?
-                                      {str->id msg} ; if so, return it. BUT, if not, then..
-                                      {,p msg}}})]  ; check recursively if the prototype of this object has it.
+                          {ifdef msg           ; does this object have a field named msg?
+                                 {str->id msg} ; if so, return it. BUT, if not, then..
+                                 {,p msg}}})]  ; check recursively if the prototype of this object has it.
 
          ; {new {prototype <Expr>} {<id> <Expr>} ...}, with at least one name/value pair
-         ; TODO #7: finish this desugaring to implement creation of an empty object.
+         ; DONE #7: finish this desugaring to implement creation of an empty object.
          ; HINT: check out the "EXACTLY analogous" case above! But...
          ;       it's worth understanding and not just copying. :)
          [(list 'new (list 'prototype p) (and (list (? valid-identifier? names) values) name-value-pairs) ...)
           ; This is EXACTLY analogous to the second ex-nihilo case above.
-          (parse-qs `{with ,empty
+          (parse-qs `{with ,name-value-pairs
                            {new {prototype ,p}}})]
 
          ; {obj-get OBJ PROPERTY}
@@ -1018,9 +1020,9 @@
           ; to the appropriate field name.
           ;
           ; Because we wrap identifier references in boxes, we also need to unbox the result to get at its value.
-          ; TODO #8: fix the minor typo on the next line and understand what's going on here and in the next two cases!
+          ; DONE #8: fix the minor typo on the next line and understand what's going on here and in the next two cases!
           ; HINT: inside a quasi-quote (a back-quoted s-expression), a comma means to evaluate the next s-expression.
-          (parse-qs `{unbox {,obj (symbol->string property)}})]
+          (parse-qs `{unbox {,obj ,(symbol->string property)}})]
 
          ; {obj-set! OBJ PROPERTY NEWVAL}
          [(list 'obj-set! obj (? valid-identifier? property) newval)
@@ -1067,7 +1069,7 @@
           ; but rather the rest of the list. The actual semantics are a bit more complex
           ; than that, but it's a good first pass!) We've commented this out.
           #;(parse-qs `{{obj-get ,obj ,message}  ; Fetch the method and apply it to..
-                      ,obj ,@args})              ; the object itself and all the arguments.
+                        ,obj ,@args})              ; the object itself and all the arguments.
           ]
          [else (error 'parse-qs "unable to parse the s-expression ~s" sexp)])))))
 
@@ -1098,7 +1100,7 @@
 (test/exn (run-qs '{with* {{parent {new ex-nihilo {x 1} {y 2}}}
                            {child {new {prototype parent} {x 3} {z 4}}}}
                           {obj-get parent z}})
-      "") ; there is no parent.z
+          "") ; there is no parent.z
 (test (run-qs '{with* {{parent {new ex-nihilo {x 1} {y 2}}}
                        {child {new {prototype parent} {x 3} {z 4}}}}
                       {obj-get child x}})
@@ -1110,6 +1112,11 @@
 (test (run-qs '{with* {{parent {new ex-nihilo {x 1} {y 2}}}
                        {child {new {prototype parent} {x 3} {z 4}}}}
                       {obj-get child z}})
+      (numV 4)) ; child.z == 4
+(test (run-qs '{with* {{parent {new ex-nihilo {x 1} {y 2}}}
+                       {child {new {prototype parent} {x 3} {z 4}}}
+                       {g-child {new {prototype child} {x 5} {y 4}}}}
+                      {obj-get g-child y}})
       (numV 4)) ; child.z == 4
 
 ; Furthermore, if we set parent.x, that's seen in parent but not child.
@@ -1153,17 +1160,17 @@
                        {child {new {prototype parent} {x 3} {z 4}}}}
                       {seqn {obj-set! child y 10}
                             {obj-get parent y}}})
-      'TODO)  ; TODO (ungraded): NEW parent.y is WHAT?
+      (numV 10))  ; DONE (ungraded): NEW parent.y is WHAT?
 (test (run-qs '{with* {{parent {new ex-nihilo {x 1} {y 2}}}
                        {child {new {prototype parent} {x 3} {z 4}}}}
                       {seqn {obj-set! child y 10}
                             {obj-get child y}}})
-      'TODO)  ; TODO (ungraded): NEW child.y is WHAT?
+      (numV 10))  ; DONE (ungraded): NEW child.y is WHAT?
 (test/exn (run-qs '{with* {{parent {new ex-nihilo {x 1} {y 2}}}
-                       {child {new {prototype parent} {x 3} {z 4}}}}
-                      {seqn {obj-set! child z 10}
-                            {obj-get parent z}}})
-      "")  ; STILL no parent.z
+                           {child {new {prototype parent} {x 3} {z 4}}}}
+                          {seqn {obj-set! child z 10}
+                                {obj-get parent z}}})
+          "")  ; STILL no parent.z
 (test (run-qs '{with* {{parent {new ex-nihilo {x 1} {y 2}}}
                        {child {new {prototype parent} {x 3} {z 4}}}}
                       {seqn {obj-set! child z 10}
@@ -1181,20 +1188,20 @@
 (test/exn (run-qs '{-> {new ex-nihilo} f 10}) "object does not have property")
 
 (test (run-qs '{-> {new ex-nihilo {a 2} {f {fun {self x} {* {obj-get self a}
-                                                                   x}}}}
+                                                            x}}}}
                    f
                    10})
       (numV 20))
 
 (test (run-qs '{with {{obj {new ex-nihilo
-                               {a 1}
-                               {inc {fun {self x} {obj-set! self a {+ {obj-get self a} x}}}}}}}
+                                {a 1}
+                                {inc {fun {self x} {obj-set! self a {+ {obj-get self a} x}}}}}}}
                      {+ {-> obj inc 1}
                         {-> obj inc 1}}})
       (numV 5))
 (test (run-qs '{-> {new ex-nihilo
-                               {f {fun {self x y z} z}}}
-                         f 10 15 34})
+                        {f {fun {self x y z} z}}}
+                   f 10 15 34})
       (numV 34))
 
 ; Test of with*
@@ -1234,20 +1241,20 @@
 
 ;; Extra tests of set in super
 (test (run-qs '{with* {{o1 {new ex-nihilo
-                             {a 5}
-                             {a? {fun {self} {obj-get self a}}}
-                             {a! {fun {self new-val}
-                                      {obj-set! self a new-val}}}}}
+                                {a 5}
+                                {a? {fun {self} {obj-get self a}}}
+                                {a! {fun {self new-val}
+                                         {obj-set! self a new-val}}}}}
                        {o2 {new {prototype o1}}}
                        {side_effect {-> o1 a! 10}}}
                       {-> o1 a?}})
       (numV 10))
                     
 (test (run-qs '{with* {{o1 {new ex-nihilo
-                             {a 5}
-                             {a? {fun {self} {obj-get self a}}}
-                             {a! {fun {self new-val}
-                                      {obj-set! self a new-val}}}}}
+                                {a 5}
+                                {a? {fun {self} {obj-get self a}}}
+                                {a! {fun {self new-val}
+                                         {obj-set! self a new-val}}}}}
                        {o2 {new {prototype o1}}}
                        {side_effect {-> o1 a! 10}}}
                       {-> o2 a?}})
@@ -1259,27 +1266,27 @@
                                 {a! {fun {self new-val}
                                          {obj-set! self a new-val}}}}}
                        {o2 {new {prototype o1}
-                                   {a 700}}}
+                                {a 700}}}
                        {side_effect {-> o1 a! 10}}}
                       {-> o2 a?}})
       (numV 700))
 
 (test (run-qs '{with* {{o1 {new ex-nihilo
-                             {a 5}
-                             {a? {fun {self} {obj-get self a}}}
-                             {a! {fun {self new-val}
-                                      {obj-set! self a new-val}}}}}
+                                {a 5}
+                                {a? {fun {self} {obj-get self a}}}
+                                {a! {fun {self new-val}
+                                         {obj-set! self a new-val}}}}}
                        {o2 {new {prototype o1}
-                                   {a 700}}}
+                                {a 700}}}
                        {side_effect {-> o2 a! 10}}}
                       {-> o2 a?}})
       (numV 10))
 
 (test (run-qs '{with* {{o1 {new ex-nihilo
-                             {a 5}
-                             {a? {fun {self} {obj-get self a}}}
-                             {a! {fun {self new-val}
-                                      {obj-set! self a new-val}}}}}
+                                {a 5}
+                                {a? {fun {self} {obj-get self a}}}
+                                {a! {fun {self new-val}
+                                         {obj-set! self a new-val}}}}}
                        {o2 {new {prototype o1}
                                 {a 700}}}
                        {side_effect {-> o2 a! 10}}}
@@ -1481,12 +1488,12 @@
 ; Like the following two definitions could produce different results (one would error and the other not)
 ; So we reject both. Note that if we wanted to access a, we could do so within f via {obj-get self a}. 
 (test/exn (run-qs '{with {{o1 {new ex-nihilo {a 10} {f {fun {self} a}}}}}
-                {-> o1 f}}) "free identifier")
+                         {-> o1 f}}) "free identifier")
 (test/exn (run-qs '{with {{o1 {new ex-nihilo {f {fun {self} a}} {a 10}}}}
-                {-> o1 f}}) "free identifier")
+                         {-> o1 f}}) "free identifier")
 
 (test (run-qs '{with {{o1 {new ex-nihilo {f {fun {self} {obj-get self a}}} {a 10}}}}
-                {-> o1 f}})
+                     {-> o1 f}})
       (numV 10))
 
 
