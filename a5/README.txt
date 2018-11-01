@@ -39,13 +39,29 @@ Signed: Edward Cai, Kwang Hee Park, Shobhit Bhatia, Ro Lee, Benjamin Willox
 
 Please fill in each of the following:
 
-Approximate hours on the project: TODO (when you get there)
+Approximate hours on the project: 8 hours
 
-Acknowledgment of assistance (per the collab policy!): TODO
+Acknowledgment of assistance (per the collab policy!): Only referenced to the Racket documentations for assistance!
 
-For teams, rough breakdown of work: TODO (no more than a paragraph needed!)
+For teams, rough breakdown of work:
+
+We had a rough plan outline to allocate the different TODOs to each member of the team. 
+If the team members did not finish their part within an internally chosen timeline (~2 days), 
+we resorted to solving it together as a team. 
+
+Roughly, each member did an equivalent of 1.8 (one point eight) TODO amount of work.
 
 ====================== THEORY =======================
 
 NONE THIS TIME! Remember to briefly explain your bonus answer if you
 solve the bonus problem (TODO #9).
+
+Explanation of Bonus:
+
+To implement factorial, we introduce the 'factorial' function within the
+'new ex-nihilo' object. The function itself is quite trivial; if the passed
+in parameter is 0, return 1, otherwise return the multiplied value of the 
+passed in parameter and the recursive call to itself with the passed in 
+parameter minus one, thus recursively calculating the factorial value. 
+
+
