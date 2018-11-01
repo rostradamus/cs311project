@@ -685,7 +685,7 @@
                    (local [(define-values (tst-val tst-sto) 
                              (v*s->values (helper tst env sto)))]
                      (type-case Value tst-val 
-                       [numV (n) (if (zero? n) 
+                       [numV (n) (if (zero? n)
                                      (helper thn env tst-sto)
                                      (helper els env tst-sto))]
                        [else (error 'interp "The test expression of an if0 must evaluate to a number.")]))]
@@ -1509,4 +1509,10 @@
 ; Fill your answer in below at the TODO marker.
 ;
 ; NOTE: The private test is ONLY worth a bonus point. You can earn 100% without it!
-(define FACTORIAL_OBJECT 'TODO)
+(define FACTORIAL_OBJECT '{o {new ex-nihilo
+                                  {acc 1}
+                                  {factorial {fun {self n}
+                                                  {if0 n
+                                                       {obj-get self acc}
+                                                       {seqn {obj-set! self acc {* {obj-get self acc} n}}
+                                                             {-> self factorial (- n 1)}}}}}}})
