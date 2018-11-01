@@ -1509,10 +1509,10 @@
 ; Fill your answer in below at the TODO marker.
 ;
 ; NOTE: The private test is ONLY worth a bonus point. You can earn 100% without it!
-(define FACTORIAL_OBJECT '{o {new ex-nihilo
-                                  {acc 1}
-                                  {factorial {fun {self n}
-                                                  {if0 n
-                                                       {obj-get self acc}
-                                                       {seqn {obj-set! self acc {* {obj-get self acc} n}}
-                                                             {-> self factorial (- n 1)}}}}}}})
+(define FACTORIAL_OBJECT '{new ex-nihilo
+                               {acc 1}
+                               {factorial {fun {self n}
+                                               {if0 n
+                                                    {obj-get self acc}
+                                                    {seqn {obj-set! self acc {* {obj-get self acc} n}}
+                                                          {-> self factorial (- n 1)}}}}}})
