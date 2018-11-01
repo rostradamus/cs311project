@@ -1497,7 +1497,7 @@
       (numV 10))
 
 
-; TODO #9: For 1 bonus point: Design a QuipuScript expression that can be filled
+; DONE #9: For 1 bonus point: Design a QuipuScript expression that can be filled
 ; into this program at the ellipsis (the "..."):
 ;
 ;  {with {{o ...}}
