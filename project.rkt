@@ -41,8 +41,8 @@
 ;; Consumes an l-expression and generates the corresponding L-Expr
 (define (parse lexp)
   (match lexp
-    [(list (? number? a) expr)
-     (modify-speed a expr)]
+    [(list (? number? multiplier) expr)
+     (modify-speed multiplier expr)]
     [(list 'note (? number? midi) (? number? start) (? number? duration))
      (note midi start duration)]
     [(list 'loop comps (? number? start) (? number? duration) (? number? iteration))
@@ -58,5 +58,10 @@
 ;; ==========================================================
 ;;                           INTERP
 ;; ==========================================================
-(define (interp expr)
-  `TODO)
+(define (interp lexpr)
+  (type-case L-Expr lexpr
+    [modify-speed (multiplier expr) `TODOmodifyspeed]
+    [note (midi start duration) `TODOnote]
+    [loop (listExpr start duration iteration) `TODOloop]
+    [segment (listExpr total) `TODOsegment]
+    ))
