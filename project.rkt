@@ -16,7 +16,7 @@
 (define-type L-Expr
    [modify-speed (multiplier number?)
                  (expr L-Expr?)]
-   [note (mini-num number?)
+   [note (midi-num number?)
          (start-bar number?)
          (duration number?)]
    [loop (comps (listof L-Expr?))
@@ -34,11 +34,19 @@
 ;; parse : l-exp -> L-Expr
 ;; Consumes an l-expression and generates the corresponding L-Expr
 (define (parse lexp)
-  `TODO)
+  (match lexp
+    [(list (? number? a) expr)
+     (`TODO)]
+    [(list 'note (? number? midi) (? number? start) (? number? duration))
+     (`TODO)]
+    [(list 'loop comps (? number? start) (? number? duration) (? number? iteration))
+     (loop (map parse comps) start duration iteration)]
+    [(list 'segment comps (? number? total))
+     (segment (map parse comps) total)]
+    ))
 
 ;; ==========================================================
 ;;                           INTERP
 ;; ==========================================================
-
 (define (interp expr)
   `TODO)
