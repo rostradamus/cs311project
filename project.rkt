@@ -42,9 +42,9 @@
 (define (parse lexp)
   (match lexp
     [(list (? number? a) expr)
-     (`TODO)]
+     (modify-speed a expr)]
     [(list 'note (? number? midi) (? number? start) (? number? duration))
-     (`TODO)]
+     (note midi start duration)]
     [(list 'loop comps (? number? start) (? number? duration) (? number? iteration))
      (loop (map parse comps) start duration iteration)]
     [(list 'segment comps (? number? total))
