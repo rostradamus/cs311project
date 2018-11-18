@@ -40,10 +40,5 @@
 ;;                           INTERP
 ;; ==========================================================
 
-;; interp : ISE -> ValueXState
-;; This procedure interprets the given ISE and produces a result
-;; in the form of a ISE-Value (either a closureV, thunkV, or numV)
-;; and a weight (a number representing the probability)
-;; using a specifically seeded random number
 (define (interp expr)
   `TODO)
