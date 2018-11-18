@@ -31,6 +31,12 @@
 ;;                           PARSE
 ;; ==========================================================
 
+;; reserved? : symbol -> boolean
+(define (reserved? word)
+  (if (member word '(note loop segment))
+      #t
+      #f))
+
 ;; parse : l-exp -> L-Expr
 ;; Consumes an l-expression and generates the corresponding L-Expr
 (define (parse lexp)
@@ -43,6 +49,10 @@
      (loop (map parse comps) start duration iteration)]
     [(list 'segment comps (? number? total))
      (segment (map parse comps) total)]
+    [(cons (and word (? reserved?)) _)
+     (error 'parse "Misused reserved word ~a in: ~a" word lexp)]
+    [_
+     (error 'parse "Unable to recognize expr: ~a" lexp)]
     ))
 
 ;; ==========================================================
