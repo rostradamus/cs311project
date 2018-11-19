@@ -1,4 +1,5 @@
 #lang plai
+(require rsound)
 
 ;; ==========================================================
 ;;                     EBNF & DEFINE-TYPES
@@ -10,8 +11,8 @@
 ;; <L-Expr> ::=
 ;;             | {note <num> <num> <num>}
 ;;             | {<num> <L-Expr>}
-;;             | {loop <L-Expr>* <num> <num> <num>}
-;;             | {segment <L-Expr>* <num>}
+;;             | {loop <L-Expr>+ <num> <num> <num>}
+;;             | {segment <L-Expr>+ <num>}
 
 (define-type L-Expr
    [note (midi-num number?)
@@ -56,20 +57,46 @@
     ))
 
 ;; ==========================================================
+;;                           PARSE TESTS
+;; ==========================================================
+;; simple tests with notes as L-Expr
+
+(test (parse '{note 1 1 1}) (note 1 1 1))
+(test (parse '{1 {note 1 1 1}}) (modify-speed 1 (note 1 1 1)))
+
+(test (parse '{loop ((note 1 1 1)) 1 1 1})
+      (loop (list (note 1 1 1)) 1 1 1))
+(test (parse '{loop ((note 1 1 1) (note 2 2 2) (note 3 3 3)) 4 4 4})
+      (loop (list (note 1 1 1) (note 2 2 2) (note 3 3 3)) 4 4 4))
+
+(test (parse '{segment ((note 1 1 1)) 2})
+      (segment (list (note 1 1 1)) 2))
+(test (parse '{segment ((note 1 1 1) (note 2 2 2)) 3})
+      (segment (list (note 1 1 1) (note 2 2 2)) 3))
+
+;; ==========================================================
 ;;                           INTERP
 ;; ==========================================================
 (define (interp lexpr)
   (type-case L-Expr lexpr
-    [note (midi start duration) `TODOnote]
+    [note (midi start duration) (play (synth-note "main" 1 midi (* FRAME-RATE duration)))]
     [modify-speed (multiplier expr) `TODOmodifyspeed]
     [loop (listExpr start duration iteration) `TODOloop]
     [segment (listExpr total) `TODOsegment]
     ))
 
 ;; ==========================================================
-;;                           TESTS
+;;                           INTERP TESTS
 ;; ==========================================================
 
-(test (parse '{note 1 1 1}) (note 1 1 1))
-(test (parse '{1 {note 1 1 1}}) (modify-speed 1 (note 1 1 1)))
-(test (parse '{loop (list {note 1 1 1}) 1 1 1}) (loop {note 1 1 1} 1 1 1))
+;; TWINKLE TWINKLE LITTLE STAR
+
+(play (rs-append* (list
+       (synth-note "main" 10 60 (* FRAME-RATE 0.5))
+       (synth-note "main" 10 60 (* FRAME-RATE 0.5))
+       (synth-note "main" 10 67 (* FRAME-RATE 0.5))
+       (synth-note "main" 10 67 (* FRAME-RATE 0.5))
+       (synth-note "main" 10 69 (* FRAME-RATE 0.5))
+       (synth-note "main" 10 69 (* FRAME-RATE 0.5))
+       (synth-note "main" 10 67 (* FRAME-RATE 0.5))
+      )))
