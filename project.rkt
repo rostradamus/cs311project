@@ -82,7 +82,7 @@
     ;[note (midi start duration) (synth-note "main" 10 midi (* FRAME-RATE duration))]
     [note (midi-num start-bar dur)
           (define buffer
-            (* (- dur start-bar)
+            (* (* 4 start-bar) ;Assume all songs are 4/4 time
                FRAME-RATE))
           (assemble
            (list
@@ -100,7 +100,7 @@
           ;and that buffer handles similarly to the implementation in the note case
           #;(local
             [(define processed
-                    exprs)
+                    (rs-append* (map interp exprs)))
             (define buffer
                (* (- dur sbar)
                   FRAME-RATE))
@@ -119,12 +119,12 @@
           `TODO]
     [segment (exprs total-length)
              ;Assume processed returns a recursively processed rsound of all exprs
-             #;(local [(define processed
-                       exprs)]
+             (local [(define processed
+                       (rs-append* (map interp exprs)))]
                      (clip processed
                            0
-                           (* FRAME-RATE total-length)))
-             'TODO]
+                           (* FRAME-RATE (* 4 total-length))))
+             ]
     ))
 
 ;; ==========================================================
@@ -145,6 +145,7 @@
       )))
 
 
+#;
 (play (interp (segment
                ((note 60 0 0.5)
               (note 60 0 0.5)
@@ -153,3 +154,5 @@
               (note 69 0 0.5)
               (note 69 0 0.5)
               (note 67 0 0.5)) 5)))
+
+(play (interp (segment (list (note 60 1 1) (note 65 2 1)) 3)))
