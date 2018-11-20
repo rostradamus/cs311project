@@ -79,10 +79,52 @@
 ;; ==========================================================
 (define (interp lexpr)
   (type-case L-Expr lexpr
-    [note (midi start duration) (play (synth-note "main" 1 midi (* FRAME-RATE duration)))]
-    [modify-speed (multiplier expr) `TODOmodifyspeed]
-    [loop (listExpr start duration iteration) `TODOloop]
-    [segment (listExpr total) `TODOsegment]
+    ;[note (midi start duration) (synth-note "main" 10 midi (* FRAME-RATE duration))]
+    [note (midi-num start-bar dur)
+          (define buffer
+            (* (- dur start-bar)
+               FRAME-RATE))
+          (assemble
+           (list
+            (list (silence buffer) 0)
+            (list
+             (synth-note
+              "main"
+              10
+              midi-num
+              (* FRAME-RATE dur))
+             buffer)))]
+    [modify-speed (multiplier expr) (resample multiplier (interp lexpr))]
+    [loop (exprs sbar dur iter)
+          ;Assume processed returns a recursively processed rsound of all exprs,
+          ;and that buffer handles similarly to the implementation in the note case
+          #;(local
+            [(define processed
+                    exprs)
+            (define buffer
+               (* (- dur sbar)
+                  FRAME-RATE))
+             (define loopSound
+               (assemble (list
+                          (list (silence buffer) 0)
+                          (list processed buffer)))
+               )
+            (define (rec-append s acc)
+               (if0 acc
+                    s
+                    (rec-append
+                     (rs-append s s)
+                     (sub1 acc))))]
+          (rec-append loopSound iter))
+          `TODO]
+    [segment (exprs total-length)
+             ;Assume processed returns a recursively processed rsound of all exprs
+             #;(local [(define processed
+                       exprs)]
+                     (clip processed
+                           0
+                           (* FRAME-RATE total-length)))
+             'TODO]
     ))
 
 ;; ==========================================================
@@ -91,6 +133,7 @@
 
 ;; TWINKLE TWINKLE LITTLE STAR
 
+#;
 (play (rs-append* (list
        (synth-note "main" 10 60 (* FRAME-RATE 0.5))
        (synth-note "main" 10 60 (* FRAME-RATE 0.5))
@@ -100,3 +143,13 @@
        (synth-note "main" 10 69 (* FRAME-RATE 0.5))
        (synth-note "main" 10 67 (* FRAME-RATE 0.5))
       )))
+
+
+(play (interp (segment
+               ((note 60 0 0.5)
+              (note 60 0 0.5)
+              (note 67 0 0.5)
+              (note 67 0 0.5)
+              (note 69 0 0.5)
+              (note 69 0 0.5)
+              (note 67 0 0.5)) 5)))
