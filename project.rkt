@@ -15,18 +15,18 @@
 ;;             | {segment <L-Expr>+ <num>}
 
 (define-type L-Expr
-   [note (midi-num number?)
-         (start-bar number?)
-         (duration number?)]
-   [modify-speed (multiplier number?)
-                 (expr L-Expr?)]
-   [loop (comps (listof L-Expr?))
-         (start-bar number?)
-         (duration number?)
-         (iteration number?)]
-   [segment (comps (listof L-Expr?))
-            (total-bars number?)]
-)
+  [note (midi-num number?)
+        (start-bar number?)
+        (duration number?)]
+  [modify-speed (multiplier number?)
+                (expr L-Expr?)]
+  [loop (comps (listof L-Expr?))
+        (start-bar number?)
+        (end-bar number?)
+        (iteration number?)]
+  [segment (comps (listof L-Expr?))
+           (total-bars number?)]
+  )
 
 ;; ==========================================================
 ;;                           PARSE
@@ -80,51 +80,42 @@
 (define (interp lexpr)
   (type-case L-Expr lexpr
     ;[note (midi start duration) (synth-note "main" 10 midi (* FRAME-RATE duration))]
-    [note (midi-num start-bar dur)
+    [note (midi-num start-bar end-bar)
           (define buffer
-            (* (* 4 start-bar) ;Assume all songs are 4/4 time
+            (* (- start-bar 1)
                FRAME-RATE))
-          (assemble
-           (list
-            (list (silence buffer) 0)
-            (list
-             (synth-note
-              "main"
-              10
-              midi-num
-              (* FRAME-RATE dur))
-             buffer)))]
+          (if (zero? buffer) ;if buffer is 0 (no silence) just play the given note
+              (synth-note
+               "main"
+               10
+               midi-num
+               (* (- end-bar start-bar) FRAME-RATE))
+              ;else add silence beforehand then play note
+              (rs-append
+               (silence buffer)
+               (synth-note
+                "main"
+                10
+                midi-num
+                (* (- end-bar start-bar) FRAME-RATE))))]
     [modify-speed (multiplier expr) (resample multiplier (interp lexpr))]
-    [loop (exprs sbar dur iter)
+    [loop (exprs start-bar end-bar iter)
           ;Assume processed returns a recursively processed rsound of all exprs,
           ;and that buffer handles similarly to the implementation in the note case
-          #;(local
-            [(define processed
-                    (rs-append* (map interp exprs)))
-            (define buffer
-               (* (- dur sbar)
-                  FRAME-RATE))
-             (define loopSound
-               (assemble (list
-                          (list (silence buffer) 0)
-                          (list processed buffer)))
-               )
-            (define (rec-append s acc)
-               (if0 acc
-                    s
-                    (rec-append
-                     (rs-append s s)
-                     (sub1 acc))))]
-          (rec-append loopSound iter))
-          `TODO]
+          (local [
+                  (define processed
+                    (assemble (map (lambda (n) (list n 0)) (map interp exprs))))
+                  (define loopAcc processed)
+                  (define (rec-append processed iter)
+                    (for ([i (sub1 iter)])
+                      (set! loopAcc (rs-append loopAcc processed)))
+                    loopAcc)]
+            (rec-append processed iter))]
     [segment (exprs total-length)
              ;Assume processed returns a recursively processed rsound of all exprs
              (local [(define processed
-                       (rs-append* (map interp exprs)))]
-                     (clip processed
-                           0
-                           (* FRAME-RATE (* 4 total-length))))
-             ]
+                       (assemble (map (lambda (n) (list n 0)) (map interp exprs))))]
+               processed)]
     ))
 
 ;; ==========================================================
@@ -135,24 +126,70 @@
 
 #;
 (play (rs-append* (list
-       (synth-note "main" 10 60 (* FRAME-RATE 0.5))
-       (synth-note "main" 10 60 (* FRAME-RATE 0.5))
-       (synth-note "main" 10 67 (* FRAME-RATE 0.5))
-       (synth-note "main" 10 67 (* FRAME-RATE 0.5))
-       (synth-note "main" 10 69 (* FRAME-RATE 0.5))
-       (synth-note "main" 10 69 (* FRAME-RATE 0.5))
-       (synth-note "main" 10 67 (* FRAME-RATE 0.5))
-      )))
+                   (synth-note "main" 10 60 (* FRAME-RATE 0.5))
+                   (synth-note "main" 10 60 (* FRAME-RATE 0.5))
+                   (synth-note "main" 10 67 (* FRAME-RATE 0.5))
+                   (synth-note "main" 10 67 (* FRAME-RATE 0.5))
+                   (synth-note "main" 10 69 (* FRAME-RATE 0.5))
+                   (synth-note "main" 10 69 (* FRAME-RATE 0.5))
+                   (synth-note "main" 10 67 (* FRAME-RATE 0.5))
+                   )))
 
+(play (interp (parse
+               '{loop ({segment (
+                     {note 60 1	 	1.25}
+                     {note 60 1.25 	1.50}
+                     {note 67 1.50 	1.75}
+                     {note 67 1.75 	2}
+                     {note 69 2         2.25}
+                     {note 69 2.25	2.5}
+                     {note 67 2.50      3}
+                     {note 65 3		3.25}
+                     {note 65 3.25	3.50}
+                     {note 64 3.50	3.75}
+                     {note 64 3.75	4}
+                     {note 62 4		4.25}
+                     {note 62 4.25	4.50}
+                     {note 60 4.50	5}) 5}
 
-#;
-(play (interp (segment
-               ((note 60 0 0.5)
-              (note 60 0 0.5)
-              (note 67 0 0.5)
-              (note 67 0 0.5)
-              (note 69 0 0.5)
-              (note 69 0 0.5)
-              (note 67 0 0.5)) 5)))
+                     {segment (
+                     {note 67 5         5.25}
+                     {note 67 5.25	5.50}
+                     {note 65 5.50	5.75}
+                     {note 65 5.75	6}
+                     {note 64 6 	6.25}
+                     {note 64 6.25	6.50}
+                     {note 62 6.50	7}) 5}
 
-(play (interp (segment (list (note 60 1 1) (note 65 2 1)) 3)))
+                     {segment (
+                     {note 67 7         7.25}
+                     {note 67 7.25	7.50}
+                     {note 65 7.50	7.75}
+                     {note 65 7.75	8}
+                     {note 64 8 	8.25}
+                     {note 64 8.25	8.50}
+                     {note 62 8.50	9}) 5}
+
+                     {segment (
+                     {note 60 9	 	9.25}
+                     {note 60 9.25 	9.50}
+                     {note 67 9.50 	9.75}
+                     {note 67 9.75 	10}
+                     {note 69 10         10.25}
+                     {note 69 10.25	10.5}
+                     {note 67 10.50     11}
+                     {note 65 11	11.25}
+                     {note 65 11.25	11.50}
+                     {note 64 11.50	11.75}
+                     {note 64 11.75	12}
+                     {note 62 12	12.25}
+                     {note 62 12.25	12.50}
+                     {note 60 12.50	13}) 13}
+
+                     ;Beatz
+                     {loop (
+                     {note 60 1.50 1.75}
+                     {note 60 1.75 2}) 1 2 12}
+                     
+                     )
+                      1 7 2})))
