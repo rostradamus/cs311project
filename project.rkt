@@ -89,15 +89,15 @@
                "main"
                10
                midi-num
-               (* (- end-bar start-bar) FRAME-RATE))
+               (round (* (- end-bar start-bar) FRAME-RATE)))
               ;else add silence beforehand then play note
               (rs-append
-               (silence buffer)
+               (silence (round buffer))
                (synth-note
                 "main"
                 10
                 midi-num
-                (* (- end-bar start-bar) FRAME-RATE))))]
+                (round (* (- end-bar start-bar) FRAME-RATE)))))]
     [modify-speed (multiplier expr) (resample multiplier (interp lexpr))]
     [loop (exprs start-bar end-bar iter)
           ;Assume processed returns a recursively processed rsound of all exprs,
@@ -186,10 +186,16 @@
                      {note 62 12.25	12.50}
                      {note 60 12.50	13}) 13}
 
+
                      ;Beatz
                      {loop (
-                     {note 60 1.50 1.75}
-                     {note 60 1.75 2}) 1 2 12}
+                     {note 55 1 1.33}
+                     {note 57 1.33 1.66}
+                     {note 59 1.66 2}) 1 2 12}
                      
                      )
                       1 7 2})))
+                     
+                     
+       
+
