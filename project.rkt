@@ -196,9 +196,10 @@
                      )
                       1 7 2})))
 
-;; Fly me to the moon                     
+;; Fly me to the moon - A test of very short notes                     
 (play (interp (parse
                '{loop ({segment (
+                     ;Treble Clef
                      {note 70 1      1.10}
                      {note 72 1.10   1.25}
                      {note 71 1.25   1.50}
@@ -214,6 +215,39 @@
                      {note 69 3.25   3.50}
                      {note 67 3.50   3.75}
                      {note 65 3.75   3.85}
-                     {note 64 3.85   5}) 5}) 1 5 1})))
+                     {note 64 3.85   5}
+
+                     ;Bass Clef
+                     {note 55 1   1.25}
+                     {note 45 1   1.25}
+                     {note 55 1.25 1.5}
+                     {note 45 1.25 1.5}
+                     {note 55 1.5 1.75}
+                     {note 45 1.5 1.75}
+                     {note 55 1.75 2}
+                     {note 45 1.75 2}
+
+                     {note 60 2 2.25}
+                     {note 50 2 2.25}
+                     {note 60 2.25  2.5}
+                     {note 50 2.25  2.5}
+                     {note 60 2.5  2.75}
+                     {note 50 2.5  2.75}
+                     {note 60 2.75  3}
+                     {note 50 2.75  3}
+
+                     {note 43 3 3.33}
+                     {note 53 3 3.33}
+                     {note 43 3.33 3.66}
+                     {note 53 3.33 3.66}
+                     {note 43 3.66 4}
+                     {note 53 3.66 4}
+
+                     {note 59 4 4.33}
+                     {note 48 4 4.33}
+                     {note 59 4.33 4.66}
+                     {note 48 4.33 4.66}
+                     {note 59 4.66 5}
+                     {note 48 4.66 5}) 5}) 1 5 2})))
        
 
