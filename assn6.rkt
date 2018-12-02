@@ -397,14 +397,14 @@
               [`{sample ,exp} (s-sample (parse exp))]
               [`{begin ,exprs ...} (s-begin (map parse exprs))]
 
-              ;; TODO #1: Parse the observe expression.
+              ;; DONE #1: Parse the observe expression.
               ;; You may use the handy quasiquote syntax in the other cases
               ;; nearby or any match syntax you prefer!
               ;;
               ;; Be sure to see the EBNF above, as the syntax for observe has
               ;; changed (as well as its semantics).
 
-              ;[`{observe TODO} (s-observe TODO)]
+              [`{observe ,dist = ,refval} (s-observe (parse dist) (parse refval))]
               
               [`{,(? valid-op? op) ,lexp ,rexp}
                (s-binop (lookup-op op) (parse lexp) (parse rexp))]
@@ -554,12 +554,12 @@
     [s-num (n) (d-num n)]
     [s-distribution (list-exp) (d-distribution (desugar list-exp))]
 
-    ;; TODO #2: Desugar uniform. BE SURE TO READ the plan above in the
+    ;; DONE #2: Desugar uniform. BE SURE TO READ the plan above in the
     ;; definition of D-SMC. In particular, note that the built-in function
     ;; _range will be handy. (It behaves exactly the same as the built-in
     ;; function range documented near the EBNF above.)
     [s-uniform (low high)
-               (error "uniform desugaring unimplemented")]
+               (d-distribution (d-app (d-id '_range) (list (desugar low) (desugar high))))]
     
     [s-sample (dist-exp) (d-sample (desugar dist-exp))]
     [s-begin (exprs) (local [(define-values (first-exprs last-expr-list)
@@ -589,7 +589,7 @@
     ;; D-SMC. You may also find it useful to look at the desugaring of s-with*
     ;; above, which is similar.
     [s-list (exps)
-            (error "list desugaring unimplemented")]
+            (if (s-empty? (parse]
     
     [s-fun (params body) (d-fun params (desugar body))]
     [s-app (function args) (d-app (desugar function) (map desugar args))]
