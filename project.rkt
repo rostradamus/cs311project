@@ -134,7 +134,7 @@
                    (synth-note "main" 10 69 (* FRAME-RATE 0.5))
                    (synth-note "main" 10 67 (* FRAME-RATE 0.5))
                    )))
-
+#;
 (play (interp (parse
                '{loop ({segment (
                      {note 60 1	 	1.25}
@@ -195,7 +195,25 @@
                      
                      )
                       1 7 2})))
-                     
-                     
+
+;; Fly me to the moon                     
+(play (interp (parse
+               '{loop ({segment (
+                     {note 70 1      1.10}
+                     {note 72 1.10   1.25}
+                     {note 71 1.25   1.50}
+                     {note 69 1.50   1.75}
+                     {note 67 1.75   1.85}
+                     {note 65 1.85   2.35}
+                     {note 67 2.35   2.50}
+                     {note 69 2.50   2.75}
+                     {note 72 2.75   3.0}
+                     {note 69 3.0    3.05}
+                     {note 70 3.05   3.10}
+                     {note 71 3.10   3.25}
+                     {note 69 3.25   3.50}
+                     {note 67 3.50   3.75}
+                     {note 65 3.75   3.85}
+                     {note 64 3.85   5}) 5}) 1 5 1})))
        
 
