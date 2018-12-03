@@ -854,15 +854,15 @@
               ;; You may want to come back for the second error later.
               [d-cons (fst rst)
                       (helper/k
-                            fst env state
-                            (lambda (f-res)
-                              (local [(define-values (fval fstate)
-                                        (v*s->values f-res))]
-                                (helper/k
-                       rst env fstate
-                       (lambda (r-res)
-                         (local [(define-values (rval rstate) (v*s->values r-res))]
-                           (k (v*s (consV fval rval) rstate))))))))]
+                       fst env state
+                       (lambda (f-res)
+                         (local [(define-values (fval fstate)
+                                   (v*s->values f-res))]
+                           (helper/k
+                            rst env fstate
+                            (lambda (r-res)
+                              (local [(define-values (rval rstate) (v*s->values r-res))]
+                                (k (v*s (consV fval rval) rstate))))))))]
               [d-empty () (k (v*s (emptyV) state))]
               [d-first (e)
                        (helper/k
@@ -989,68 +989,68 @@
                                  (error 'interp "attempt to sample empty distribution in ~a" e)
                                  (k (v*s (get-sample (distV-values eval)) estate))))))]
               [d-observe (de ve)
-                ;; First, we need to evaluate the distribution and value expressions.
-                (helper/k
-                 de env state
-                 (lambda (de-val)
-                   (local [(define-values (dval dstate)
-                             (v*s->values (assert-type-v*s de-val distV?)))]
-                     (helper/k
-                      ve env dstate
-                      (lambda (ve-val)
-                        (local [(define-values (vval vstate) (v*s->values ve-val))]
-                          ; Next, we need to check which vals in dval equal vval.
-                          (local [; Pull the values out of the distribution.
-                                  (define vals (distV-values dval))
+                         ;; First, we need to evaluate the distribution and value expressions.
+                         (helper/k
+                          de env state
+                          (lambda (de-val)
+                            (local [(define-values (dval dstate)
+                                      (v*s->values (assert-type-v*s de-val distV?)))]
+                              (helper/k
+                               ve env dstate
+                               (lambda (ve-val)
+                                 (local [(define-values (vval vstate) (v*s->values ve-val))]
+                                   ; Next, we need to check which vals in dval equal vval.
+                                   (local [; Pull the values out of the distribution.
+                                           (define vals (distV-values dval))
                                   
-                                  ; Get just the matching values.
-                                  (define matching-vals
-                                    (filter (lambda (v) (equal? v vval)) vals))
+                                           ; Get just the matching values.
+                                           (define matching-vals
+                                             (filter (lambda (v) (equal? v vval)) vals))
                                   
-                                  ; The likelihood update
-                                  (define passed-fraction
-                                    (/ (length matching-vals) (length vals)))
+                                           ; The likelihood update
+                                           (define passed-fraction
+                                             (/ (length matching-vals) (length vals)))
                                   
-                                  ; The final result. If passed-fraction = 0, reject.
-                                  ; Else, update state by the fraction that passed.
-                                  ; Since only one value can "survive", we collapse
-                                  ;; to just that one value.
-                                  (define result (if (= passed-fraction 0)
-                                                     (v*s (rejectedV) 0)
-                                                     (v*s (distV (list vval))
-                                                          (* vstate passed-fraction))))]
-                            ; Now, hand off to the controller,
-                            ; but when we come back, reject if needed.
-                            (controller
-                             result
-                             ;; DONE #8: This lambda is the core of our interpreter.
-                             ;; It enables the "sequential Monte Carlo" approach by
-                             ;; handing off ot the "controller" function a continuation
-                             ;; representing the computation in progress. That computation
-                             ;; should (1) check whether v*s is a rejected value or not
-                             ;; and (2a) if so, reject using the continuation reject-k
-                             ;; (notice that if we use reject-k and not k, then we
-                             ;; "instantly" propagate the rejection out of the
-                             ;; computation in progress; no messy threading through our
-                             ;; whole interpreter!) and (2b) if v*s is not a rejected
-                             ;; value, simply return it as the observe's result.
-                             ;;
-                             ;; Because this lambda is a continuation, if the SMC
-                             ;; controller decides it wants to "clone" this computation
-                             ;; many times, it can simply call this continuation many
-                             ;; times. If it wants to discard this computation, it
-                             ;; just doesn't call the continuation at all.
-                             (lambda (v*s)
-                               (local [(define-values (vs-val vs-state)
-                                         (v*s->values v*s))]
-                               ; DONE implement the body based on the notes above.
-                               ; Our version is three lines long with fewer than
-                               ; 60 non-whitespace characters. So, don't do too much!
-                               (if (rejectedV? vs-val)
-                                   (reject-k v*s)
-                                   (k v*s))))
-                             ; The name stack is internally named _STACK.
-                             (SMC-Value->racket (lookup '_STACK env))))))))))]))]
+                                           ; The final result. If passed-fraction = 0, reject.
+                                           ; Else, update state by the fraction that passed.
+                                           ; Since only one value can "survive", we collapse
+                                           ;; to just that one value.
+                                           (define result (if (= passed-fraction 0)
+                                                              (v*s (rejectedV) 0)
+                                                              (v*s (distV (list vval))
+                                                                   (* vstate passed-fraction))))]
+                                     ; Now, hand off to the controller,
+                                     ; but when we come back, reject if needed.
+                                     (controller
+                                      result
+                                      ;; DONE #8: This lambda is the core of our interpreter.
+                                      ;; It enables the "sequential Monte Carlo" approach by
+                                      ;; handing off ot the "controller" function a continuation
+                                      ;; representing the computation in progress. That computation
+                                      ;; should (1) check whether v*s is a rejected value or not
+                                      ;; and (2a) if so, reject using the continuation reject-k
+                                      ;; (notice that if we use reject-k and not k, then we
+                                      ;; "instantly" propagate the rejection out of the
+                                      ;; computation in progress; no messy threading through our
+                                      ;; whole interpreter!) and (2b) if v*s is not a rejected
+                                      ;; value, simply return it as the observe's result.
+                                      ;;
+                                      ;; Because this lambda is a continuation, if the SMC
+                                      ;; controller decides it wants to "clone" this computation
+                                      ;; many times, it can simply call this continuation many
+                                      ;; times. If it wants to discard this computation, it
+                                      ;; just doesn't call the continuation at all.
+                                      (lambda (v*s)
+                                        (local [(define-values (vs-val vs-state)
+                                                  (v*s->values v*s))]
+                                          ; DONE implement the body based on the notes above.
+                                          ; Our version is three lines long with fewer than
+                                          ; 60 non-whitespace characters. So, don't do too much!
+                                          (if (rejectedV? vs-val)
+                                              (reject-k v*s)
+                                              (k v*s))))
+                                      ; The name stack is internally named _STACK.
+                                      (SMC-Value->racket (lookup '_STACK env))))))))))]))]
     (helper/k expr env state k)))
 
 
@@ -1451,22 +1451,22 @@
               [d-id (n) (d-id n)]
               [d-str (s) (d-str s)]
               [d-rec-with (fname params fbody body)
-                (d-rec-with fname (cons '_STACK params) (helper fbody) (helper body))]
+                          (d-rec-with fname (cons '_STACK params) (helper fbody) (helper body))]
               ; Pre-evaluate the distribution and predicate expressions, then
               ; put a new name on the stack for this observe, and only then actually
               ; do the observe.
               [d-observe (de pe)
-                (d-with '_DVAL (helper de)
-                        (d-with '_PVAL (helper pe)
-                                (d-with '_STACK (d-cons (d-str (gen-name "observe"))
-                                                        (d-id '_STACK))
-                                        (d-observe (d-id '_DVAL) (d-id '_PVAL)))))]
+                         (d-with '_DVAL (helper de)
+                                 (d-with '_PVAL (helper pe)
+                                         (d-with '_STACK (d-cons (d-str (gen-name "observe"))
+                                                                 (d-id '_STACK))
+                                                 (d-observe (d-id '_DVAL) (d-id '_PVAL)))))]
               [d-fun (params body) (d-fun (cons '_STACK params) (helper body))]
               [d-app (fe aes)
-                     (local [(define name (gen-name "anon"))]
-                       (d-app (helper fe)
-                              (cons (d-cons (d-str name) (d-id '_STACK))
-                                    (map helper aes))))]))]
+                     (d-app (helper fe)
+                            (cons (local [(define name (gen-name "anon"))]
+                                    (d-cons (d-str name) (d-id '_STACK)))
+                                  (map helper aes)))]))]
     (helper d-ast)))
 
 
@@ -1971,18 +1971,18 @@
                                              {uniform {- new-posn 1} {+ new-posn 2}}}}}}
                                {rec-with
                                 {track-object {curr-posn observed-posns}
-                                  {ifelse {empty? observed-posns}
-                                          empty
-                                          {begin {observe {read-sensor curr-posn}
-                                                          = {first observed-posns}}
-                                                 {track-object
-                                                  {sample {move-object curr-posn}}
-                                                  {rest observed-posns}}}}}
-                                         {begin
-                                           {track-object init-posn observations}
-                                           {cons speed init-posn}}}}}}))
+                                              {ifelse {empty? observed-posns}
+                                                      empty
+                                                      {begin {observe {read-sensor curr-posn}
+                                                                      = {first observed-posns}}
+                                                             {track-object
+                                                              {sample {move-object curr-posn}}
+                                                              {rest observed-posns}}}}}
+                                {begin
+                                  {track-object init-posn observations}
+                                  {cons speed init-posn}}}}}}))
          (define top-result (car (last (sort result (lambda (x y) (< (cdr x) (cdr y)))))))]
-         top-result)
+   top-result)
  (lambda (x)
    ;                   INIT POSN  SPEED
    (or (equal? x (consV (numV 2) (numV 4)))
