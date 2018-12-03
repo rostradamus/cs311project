@@ -653,6 +653,7 @@
       (d-app (d-num 1) (list (d-num 2) (d-num 3) (d-num 4))))
 
 (test (desugar (parse 'x)) (d-id 'x))
+(test (desugar (parse 'x)) (d-id 'x))
 
 
 
