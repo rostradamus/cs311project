@@ -727,7 +727,7 @@
 ;; Plus non-CPS version for testing.
 
 
-;; TODO #4: There's a small error in this CPS-converted implementation
+;; DONE #4: There's a small error in this CPS-converted implementation
 ;; of foldl. You should be able to find it using just the my-foldl tests
 ;; below, not trying to debug its use in interp!
 
@@ -738,7 +738,7 @@
 (define (foldl/k proc/k init lst k)
   (local [(define (helper/k lst acc k)
             (if (empty? lst)
-                acc
+                (k acc)
                 (proc/k
                  (first lst) acc
                  (lambda (p-res)
