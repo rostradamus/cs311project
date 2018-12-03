@@ -589,7 +589,9 @@
     ;; D-SMC. You may also find it useful to look at the desugaring of s-with*
     ;; above, which is similar.
     [s-list (exps)
-            (if (s-empty? (parse]
+            (if (empty? exps)
+                (d-empty)
+                (d-cons (desugar (first exps)) (desugar (s-list (rest exps)))))]
     
     [s-fun (params body) (d-fun params (desugar body))]
     [s-app (function args) (d-app (desugar function) (map desugar args))]
