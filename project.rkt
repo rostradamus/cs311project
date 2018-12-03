@@ -81,9 +81,16 @@
   (type-case L-Expr lexpr
     ;[note (midi start duration) (synth-note "main" 10 midi (* FRAME-RATE duration))]
     [note (midi-num start-bar end-bar)
+          (define validNote
+            (if (negative? (- end-bar start-bar))
+              false
+              true))
           (define buffer
             (* (- start-bar 1)
                FRAME-RATE))
+          (if validNote
+              true
+              (error 'Note "failed because note end-bar is before start-bar"))
           (if (zero? buffer) ;if buffer is 0 (no silence) just play the given note
               (synth-note
                "main"
@@ -115,12 +122,33 @@
              ;Assume processed returns a recursively processed rsound of all exprs
              (local [(define processed
                        (assemble (map (lambda (n) (list n 0)) (map interp exprs))))]
-               processed)]
+               (clip processed 1 (/ (* FRAME-RATE total-length) 2)))]
     ))
 
 ;; ==========================================================
 ;;                           INTERP TESTS
 ;; ==========================================================
+
+;; Segment cuts off music despite having more notes in list due to user specifying segment length
+(play (interp (parse '{segment (
+                                {note 60 1 1.25}
+                                {note 60 1.25 1.50}
+                                {note 67 1.50 	1.75}
+                                {note 67 1.75    2}
+                                {note 69 2         2.25}
+                                {note 69 2.25	2.5}
+                                {note 67 2.50      3}
+                                {note 65 3		3.25}
+                                {note 65 3.25	3.50}
+                                {note 64 3.50	3.75}
+                                {note 64 3.75	4} ;;CUTS OFF HERE
+                                {note 62 4		4.25}
+                                {note 62 4.25	4.50}
+                                {note 60 4.50	5}) 4})))
+
+;; Raises an error because note starts on bar 2 and ends on bar 1
+#;
+(play (interp (parse '{note 60 2 1})))
 
 ;; TWINKLE TWINKLE LITTLE STAR
 
@@ -196,7 +224,8 @@
                      )
                       1 7 2})))
 
-;; Fly me to the moon - A test of very short notes                     
+;; Fly me to the moon - A test of very short notes
+#;
 (play (interp (parse
                '{loop ({segment (
                      ;Treble Clef
