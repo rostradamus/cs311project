@@ -584,7 +584,7 @@
     [s-rest (exp) (d-rest (desugar exp))]
     [s-is-empty (exp) (d-is-empty (desugar exp))]
 
-    ;; TODO #3: Desugar list in terms of cons and empty. Again, note that
+    ;; DONE #3: Desugar list in terms of cons and empty. Again, note that
     ;; a strategy for the desugaring is described already at the definition of
     ;; D-SMC. You may also find it useful to look at the desugaring of s-with*
     ;; above, which is similar.
@@ -816,18 +816,23 @@
                                          (v*s->values (assert-type-v*s rres numV?)))]
                                  (k (v*s (apply-op op lval rval) rstate))))))))]
               [d-with (name named-expr body)
-                      ;; TODO #5: Implement with. Note that we've provided
+                      ;; DONE #5: Implement with. Note that we've provided
                       ;; a non-CPS-converted implementation. So, convert it
                       ;; to CPS!
                       ;;
                       ;; Our tests don't ensure that you put the body in tail
                       ;; position.. but you should! And, you should know what
                       ;; it looks like for something to "be in tail position".
-                      (error "d-with interpretation unimplemented")
-                      #; ; non-CPS version:
-                      (local [(define-values (neval nestate)
-                                (v*s->values (helper named-expr env state)))]
-                        (helper body (anEnv name neval env) nestate))]
+                      (helper/k
+                       named-expr env state
+                       (lambda (ne-res)
+                         (local [(define-values (neval nestate)
+                                   (v*s->values ne-res))]
+                           (helper/k
+                            body
+                            (anEnv name neval env)
+                            nestate
+                            k))))]
               [d-id (id) (k (v*s (lookup id env) state))]
               [d-ifelse (ce te ee)
                         (helper/k
@@ -838,7 +843,7 @@
                                    (define next-exp
                                      (if (not (= (numV-n cval) 0)) te ee))]
                              (helper/k next-exp env cstate k))))]
-              ;; TODO #6: There are some small errors in the implementation of
+              ;; DONE #6: There are some small errors in the implementation of
               ;; d-cons. Find and fix them!
               ;;
               ;; The one causing the error "Reached this point,
@@ -849,15 +854,15 @@
               ;; You may want to come back for the second error later.
               [d-cons (fst rst)
                       (helper/k
-                       rst env state
-                       (lambda (r-res)
-                         (local [(define-values (rval rstate) (v*s->values r-res))]
-                           (helper/k
-                            fst env rstate
+                            fst env state
                             (lambda (f-res)
                               (local [(define-values (fval fstate)
                                         (v*s->values f-res))]
-                                (v*s (consV fval rval) fstate)))))))]
+                                (helper/k
+                       rst env fstate
+                       (lambda (r-res)
+                         (local [(define-values (rval rstate) (v*s->values r-res))]
+                           (k (v*s (consV fval rval) rstate))))))))]
               [d-empty () (k (v*s (emptyV) state))]
               [d-first (e)
                        (helper/k
@@ -883,7 +888,7 @@
                                                          (or/c consV? emptyV?))))]
                                (k (v*s (numV (if (emptyV? eval) 1 0)) estate)))))]
               
-              ;; TODO #7: We are using the wrong continuation/state inside of d-fun.
+              ;; DONE #7: We are using the wrong continuation/state inside of d-fun.
               ;; Patch them up, and be sure you know why we use what we use!
               ;;
               ;; If you read carefully the plan below, you should be able to fix
@@ -906,7 +911,7 @@
                                    (SMC-Value->racket (lookup '_STACK env))))
                                 ; Note that we return TO THE CALL SITE, i.e., we use call-k, not k.
                                 ; This call to foldr is fine within CPS; it does nothing interesting :)
-                                (helper/k body (foldr anEnv env params argvs) state k)))
+                                (helper/k body (foldr anEnv env params argvs) call-state call-k)))
                              state))]
               [d-app (fe argexps)
                      ; Evaluate the function expression:
@@ -1018,7 +1023,7 @@
                             ; but when we come back, reject if needed.
                             (controller
                              result
-                             ;; TODO #8: This lambda is the core of our interpreter.
+                             ;; DONE #8: This lambda is the core of our interpreter.
                              ;; It enables the "sequential Monte Carlo" approach by
                              ;; handing off ot the "controller" function a continuation
                              ;; representing the computation in progress. That computation
@@ -1036,10 +1041,14 @@
                              ;; times. If it wants to discard this computation, it
                              ;; just doesn't call the continuation at all.
                              (lambda (v*s)
-                               ; TODO: implement the body based on the notes above.
+                               (local [(define-values (vs-val vs-state)
+                                         (v*s->values v*s))]
+                               ; DONE implement the body based on the notes above.
                                ; Our version is three lines long with fewer than
                                ; 60 non-whitespace characters. So, don't do too much!
-                               (k v*s))
+                               (if (rejectedV? vs-val)
+                                   (reject-k v*s)
+                                   (k v*s))))
                              ; The name stack is internally named _STACK.
                              (SMC-Value->racket (lookup '_STACK env))))))))))]))]
     (helper/k expr env state k)))
