@@ -191,56 +191,6 @@
                                           ne-vals)))]
               ))]
     (helper lexpr (mtEnv))))
-#;
-(define (interp lexpr)
-  (type-case L-Expr lexpr
-    ;[note (midi start duration) (synth-note "main" 10 midi (* FRAME-RATE duration))]
-    [id (name) 'TODO]
-    [note (midi-num start-bar end-bar)
-          (define validNote
-            (if (negative? (- end-bar start-bar))
-                false
-                true))
-          (define buffer
-            (* (- start-bar 1)
-               FRAME-RATE))
-          (if validNote
-              true
-              (error 'Note "failed because note end-bar is before start-bar"))
-          (if (zero? buffer) ;if buffer is 0 (no silence) just play the given note
-              (synth-note
-               "main"
-               10
-               midi-num
-               (round (* (- end-bar start-bar) FRAME-RATE)))
-              ;else add silence beforehand then play note
-              (rs-append
-               (silence (round buffer))
-               (synth-note
-                "main"
-                10
-                midi-num
-                (round (* (- end-bar start-bar) FRAME-RATE)))))]
-    [modify-speed (multiplier expr) (resample multiplier (interp lexpr))]
-    [loop (exprs start-bar end-bar iter)
-          ;Assume processed returns a recursively processed rsound of all exprs,
-          ;and that buffer handles similarly to the implementation in the note case
-          (local [
-                  (define processed
-                    (assemble (map (lambda (n) (list n 0)) (map interp exprs))))
-                  (define loopAcc processed)
-                  (define (rec-append processed iter)
-                    (for ([i (sub1 iter)])
-                      (set! loopAcc (rs-append loopAcc processed)))
-                    loopAcc)]
-            (rec-append processed iter))]
-    [segment (exprs total-length)
-             ;Assume processed returns a recursively processed rsound of all exprs
-             (local [(define processed
-                       (assemble (map (lambda (n) (list n 0)) (map interp exprs))))]
-               (clip processed 1 (/ (* FRAME-RATE total-length) 2)))]
-    [with (names named-exprs body) 'TODO]
-    ))
 
 ;; ==========================================================
 ;;                           INTERP TESTS
@@ -338,7 +288,7 @@
                               {note 55 1 1.33}
                               {note 57 1.33 1.66}
                               {note 59 1.66 2}) 1 2 12}
-                     
+
                        )
                       1 7 2})))
 
