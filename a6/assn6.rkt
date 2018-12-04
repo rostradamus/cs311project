@@ -405,7 +405,7 @@
               ;; changed (as well as its semantics).
 
               [`{observe ,dist = ,refval} (s-observe (parse dist) (parse refval))]
-              
+
               [`{,(? valid-op? op) ,lexp ,rexp}
                (s-binop (lookup-op op) (parse lexp) (parse rexp))]
               [`{ifelse ,cexp ,texp ,eexp}
@@ -560,7 +560,7 @@
     ;; function range documented near the EBNF above.)
     [s-uniform (low high)
                (d-distribution (d-app (d-id '_range) (list (desugar low) (desugar high))))]
-    
+
     [s-sample (dist-exp) (d-sample (desugar dist-exp))]
     [s-begin (exprs) (local [(define-values (first-exprs last-expr-list)
                                (split-at-right exprs 1))]
@@ -592,7 +592,7 @@
             (if (empty? exps)
                 (d-empty)
                 (d-cons (desugar (first exps)) (desugar (s-list (rest exps)))))]
-    
+
     [s-fun (params body) (d-fun params (desugar body))]
     [s-app (function args) (d-app (desugar function) (map desugar args))]
     [s-id (name) (d-id name)]
@@ -887,7 +887,7 @@
                                         (assert-type-v*s e-res
                                                          (or/c consV? emptyV?))))]
                                (k (v*s (numV (if (emptyV? eval) 1 0)) estate)))))]
-              
+
               ;; DONE #7: We are using the wrong continuation/state inside of d-fun.
               ;; Patch them up, and be sure you know why we use what we use!
               ;;
@@ -1002,15 +1002,15 @@
                                    ; Next, we need to check which vals in dval equal vval.
                                    (local [; Pull the values out of the distribution.
                                            (define vals (distV-values dval))
-                                  
+
                                            ; Get just the matching values.
                                            (define matching-vals
                                              (filter (lambda (v) (equal? v vval)) vals))
-                                  
+
                                            ; The likelihood update
                                            (define passed-fraction
                                              (/ (length matching-vals) (length vals)))
-                                  
+
                                            ; The final result. If passed-fraction = 0, reject.
                                            ; Else, update state by the fraction that passed.
                                            ; Since only one value can "survive", we collapse
@@ -1434,7 +1434,7 @@
             (local [(define num next-num)]
               (set! next-num (add1 next-num))
               (string-append name "-" (number->string num))))
-          
+
           (define (helper d-ast)
             (type-case D-SMC d-ast
               [d-num (n) (d-num n)]
@@ -1463,10 +1463,14 @@
                                                  (d-observe (d-id '_DVAL) (d-id '_PVAL)))))]
               [d-fun (params body) (d-fun (cons '_STACK params) (helper body))]
               [d-app (fe aes)
-                     (d-app (helper fe)
-                            (cons (local [(define name (gen-name "anon"))]
-                                    (d-cons (d-str name) (d-id '_STACK)))
-                                  (map helper aes)))]))]
+                     (local [(define fval (helper fe))]
+                       (d-app fval
+                              (cons (local [(define name
+                                              (type-case D-SMC fval
+                                                [d-id (n) (gen-name n)]
+                                                [else (gen-name "anon")]))]
+                                      (d-cons (d-str name) (d-id '_STACK)))
+                                    (map helper aes))))]))]
     (helper d-ast)))
 
 
@@ -1591,7 +1595,7 @@
     [pc (cont result name-stack)
         (pc cont (v*s (v*s-val result) s) name-stack)]))
 
-; Two separate (lambda (x) x)'s do not compare equal, but identity compares equal to itself. 
+; Two separate (lambda (x) x)'s do not compare equal, but identity compares equal to itself.
 (test (reweight-pc (pc identity (v*s (numV 1) 0.4) empty))
       (pc identity (v*s (numV 1) 1) empty))
 (test (reweight-pc (pc identity (v*s (numV 1) 0.4) empty) 0.5)
@@ -1773,7 +1777,7 @@
                                        (pc-continuation pc))))
         (controller (v*s (numV 3) 0.2) identity '("a")))
       (list (v*s (numV 3) 0.2) '("a") identity))
-     
+
 
 ;; D-Program -> (listof (cons SMC-Value likelihood))
 ;; Perform sequential monte carlo inference over the given program.
@@ -1782,7 +1786,7 @@
   ;; computation (indexed by number) was running for a parallel implementation.
   (type-case D-Program d-ast
     [d-program (n raw-query)
-               (local [;; Do the name stack transform so that we can check that 
+               (local [;; Do the name stack transform so that we can check that
                        ;; computations always halt at the same observe.
                        (define query (name-stack-xform raw-query))
 
@@ -1790,7 +1794,7 @@
                        (define sampler (get-default-sampler))
 
                        ;; A box containing the continuation to use for all controllers.
-                       ;; And the one controller to use for all computations. 
+                       ;; And the one controller to use for all computations.
                        (define CBOX (box false))
                        (define controller (make-smc-controller CBOX))
 
@@ -1815,7 +1819,7 @@
                                         empty))
                           (v*s (numV 0) 1)
                           empty))
-              
+
                        ;; Initialize ALL pending computations.
                        (define (initialize-all-computations)
                          (build-list n (lambda (x) (initialize-computation))))
@@ -1847,7 +1851,7 @@
                          (local [(define comp-results
                                    (validate-results
                                     (map resume-computation pending-computations)))]
-                           (if (not (computation-complete? comp-results))                      
+                           (if (not (computation-complete? comp-results))
                                (run-inference (resample-all-computations comp-results))
                                ; Done! Return the results: normalized and
                                ; then gathered up into a list of pairs.
@@ -1948,10 +1952,10 @@
 
                                 {speeds {uniform -4 5}}
                                 {init-posns {uniform -4 5}}
-                     
+
                                 {speed {sample speeds}}
                                 {init-posn {sample init-posns}}
-                     
+
                                 ; Using binomial coefficients for "spread".
                                 ; Could read as up to 3 units in either direction.
                                 {sensor-spread
@@ -1963,7 +1967,7 @@
                                  {fun {posn}
                                       {distribution
                                        {map {fun {x} {+ posn x}} sensor-spread}}}}
-                     
+
                                 ; When moving, could end up up to 1 unit in either direction.
                                 {move-object
                                  {fun {posn}
